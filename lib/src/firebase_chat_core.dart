@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'util.dart';
 
@@ -203,6 +207,82 @@ class FirebaseChatCore {
         .asyncMap((query) => processRoomsQuery(firebaseUser!, query));
   }
 
+  Future<void> sendMediaMessage(
+      dynamic partialMessage, String roomId, File file, String fileName,
+      {Uint8List? thumbFile, String? thumbFileName}) async {
+    if (firebaseUser == null) return;
+
+    types.Message? message;
+    if (partialMessage is types.PartialImage) {
+      message = types.ImageMessage.fromPartial(
+        author: types.User(id: firebaseUser!.uid),
+        id: '',
+        partialImage: partialMessage,
+      );
+    } else if (partialMessage is types.PartialVideo) {
+      message = types.VideoMessage.fromPartial(
+        author: types.User(id: firebaseUser!.uid),
+        id: '',
+        partialVideo: partialMessage,
+      );
+    }
+    if (message != null) {
+      final messageMap = message.toJson();
+      messageMap.removeWhere((key, value) => key == 'author' || key == 'id');
+      messageMap['authorId'] = firebaseUser!.uid;
+      messageMap['createdAt'] = FieldValue.serverTimestamp();
+      messageMap['updatedAt'] = FieldValue.serverTimestamp();
+
+      dynamic messageRef;
+      try {
+        messageRef = await FirebaseFirestore.instance
+            .collection('rooms/$roomId/messages')
+            .add(messageMap);
+
+        //se video carico la thumb
+        if (message is types.VideoMessage) {
+          if (thumbFile != null && thumbFileName != null) {
+            //carico il file
+            final path = firebaseUser!.uid.toString() +
+                '/' +
+                roomId +
+                '/' +
+                thumbFileName;
+            await FirebaseStorage.instance.ref(path).putData(thumbFile);
+            final url =
+                await FirebaseStorage.instance.ref(path).getDownloadURL();
+            messageMap['thumbUri'] = url;
+          } else {
+            throw 'Missing thumb data';
+          }
+        }
+        //carico il file
+        final path =
+            firebaseUser!.uid.toString() + '/' + roomId + '/' + fileName;
+        await FirebaseStorage.instance.ref(path).putFile(file);
+        final url = await FirebaseStorage.instance.ref(path).getDownloadURL();
+        //aggiorno il messaggio
+        messageMap
+            .removeWhere((key, value) => key == 'id' || key == 'createdAt');
+        messageMap['updatedAt'] = FieldValue.serverTimestamp();
+        messageMap['uri'] = url; //link immagine
+
+        await FirebaseFirestore.instance
+            .collection('rooms/$roomId/messages')
+            .doc(messageRef.id as String?)
+            .update(messageMap);
+      } catch (e) {
+        if (messageRef != null) {
+          await FirebaseFirestore.instance
+              .collection('rooms/$roomId/messages')
+              .doc(messageRef.id as String?)
+              .delete();
+        }
+        throw 'Invio media fallito';
+      }
+    }
+  }
+
   /// Sends a message to the Firestore. Accepts any partial message and a
   /// room ID. If arbitraty data is provided in the [partialMessage]
   /// does nothing.
@@ -235,6 +315,18 @@ class FirebaseChatCore {
         id: '',
         partialVideo: partialMessage,
       );
+    } else if (partialMessage is types.PartialChoice) {
+      message = types.ChoiceMessage.fromPartial(
+        author: types.User(id: firebaseUser!.uid),
+        id: '',
+        partialChoice: partialMessage,
+      );
+    } else if (partialMessage is types.PartialQuestion) {
+      message = types.QuestionMessage.fromPartial(
+        author: types.User(id: firebaseUser!.uid),
+        id: '',
+        partialQuestion: partialMessage,
+      );
     }
 
     if (message != null) {
@@ -254,11 +346,13 @@ class FirebaseChatCore {
   /// room ID. Message will probably be taken from the [messages] stream.
   void updateMessage(types.Message message, String roomId) async {
     if (firebaseUser == null) return;
-    if (message.author.id != firebaseUser!.uid) return;
+    //if (message.author.id != firebaseUser!.uid) return;
 
     final messageMap = message.toJson();
-    messageMap.removeWhere((key, value) => key == 'id' || key == 'createdAt');
+    messageMap.removeWhere(
+        (key, value) => key == 'id' || key == 'createdAt' || key == 'author');
     messageMap['updatedAt'] = FieldValue.serverTimestamp();
+    print(messageMap);
 
     await FirebaseFirestore.instance
         .collection('rooms/$roomId/messages')
