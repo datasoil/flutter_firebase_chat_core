@@ -1,4 +1,6 @@
+import 'dart:developer';
 import 'dart:io';
+
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,6 +9,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'util.dart';
+
 
 /// Provides access to Firebase chat data. Singleton, use
 /// FirebaseChatCore.instance to aceess methods.
@@ -342,7 +345,7 @@ class FirebaseChatCore {
       messageMap['createdAt'] = FieldValue.serverTimestamp();
       messageMap['updatedAt'] = FieldValue.serverTimestamp();
       messageMap['roomId'] = roomId;
-      debugPrint(messageMap['roomId'].toString());
+      log(roomId);
       await FirebaseFirestore.instance
           .collection('rooms/$roomId/messages')
           .add(messageMap);
