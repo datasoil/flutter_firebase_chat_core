@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'util.dart';
 
@@ -341,6 +342,7 @@ class FirebaseChatCore {
       messageMap['createdAt'] = FieldValue.serverTimestamp();
       messageMap['updatedAt'] = FieldValue.serverTimestamp();
       messageMap['roomId'] = roomId;
+      debugPrint(messageMap['roomId'].toString());
       await FirebaseFirestore.instance
           .collection('rooms/$roomId/messages')
           .add(messageMap);
