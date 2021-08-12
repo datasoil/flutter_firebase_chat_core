@@ -290,7 +290,6 @@ class FirebaseChatCore {
     if (firebaseUser == null) return;
     
     types.Message? message;
-    print("roomID dhaidnasuidnasuioduiasdniasudnasuidnasuidn: "+ roomId);
     if (partialMessage is types.PartialFile) {
       message = types.FileMessage.fromPartial(
         author: types.User(id: firebaseUser!.uid),
@@ -341,7 +340,7 @@ class FirebaseChatCore {
       messageMap['authorId'] = firebaseUser!.uid;
       messageMap['createdAt'] = FieldValue.serverTimestamp();
       messageMap['updatedAt'] = FieldValue.serverTimestamp();
-
+      messageMap['roomId'] = roomId;
       await FirebaseFirestore.instance
           .collection('rooms/$roomId/messages')
           .add(messageMap);
