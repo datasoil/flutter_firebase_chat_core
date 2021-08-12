@@ -288,9 +288,9 @@ class FirebaseChatCore {
   /// does nothing.
   void sendMessage(dynamic partialMessage, String roomId) async {
     if (firebaseUser == null) return;
-
+    
     types.Message? message;
-
+    print("roomID dhaidnasuidnasuioduiasdniasudnasuidnasuidn: "+ roomId);
     if (partialMessage is types.PartialFile) {
       message = types.FileMessage.fromPartial(
         author: types.User(id: firebaseUser!.uid),
