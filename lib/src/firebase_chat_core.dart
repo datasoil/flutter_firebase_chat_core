@@ -118,55 +118,45 @@ class FirebaseChatCore {
       users: users,
     );
   }
-  // TODO: creare funzione a cui passiamo solamente L'id univoco
-  Future<types.Room> createRoomWithCustomId(
-    types.User otherUser, {
+
+   Future<types.Room> createRoomWithCustomId({
+    String? imageUrl,
     Map<String, dynamic>? metadata,
-    required String uuid,
+    required String name,
+    required List<types.User> users,
+    required String uuid
   }) async {
     if (firebaseUser == null) return Future.error('User does not exist');
 
-    final query = await FirebaseFirestore.instance
-        .collection('rooms')
-        .where('userIds', arrayContains: firebaseUser!.uid)
-        .get();
-
-    final rooms = await processRoomsQuery(firebaseUser!, query);
-
-    try {
-      return rooms.firstWhere((room) {
-        if (room.type == types.RoomType.group) return false;
-
-        final userIds = room.users.map((u) => u.id);
-        return userIds.contains(firebaseUser!.uid) &&
-            userIds.contains(otherUser.id);
-      });
-    } catch (e) {
-      // Do nothing if room does not exist
-      // Create a new room instead
-    }
-
     final currentUser = await fetchUser(firebaseUser!.uid);
-    final users = [currentUser, otherUser];
+    final roomUsers = [currentUser] + users;
 
     final room = await FirebaseFirestore.instance.collection('rooms').doc(uuid).set({
       'createdAt': FieldValue.serverTimestamp(),
-      'imageUrl': null,
+      'imageUrl': imageUrl,
       'metadata': metadata,
-      'name': null,
-      'type': types.RoomType.direct.toShortString(),
+      'name': name,
+      'type': types.RoomType.group.toShortString(),
       'updatedAt': FieldValue.serverTimestamp(),
-      'userIds': users.map((u) => u.id).toList(),
-      'userRoles': null,
+      'userIds': roomUsers.map((u) => u.id).toList(),
+      'userRoles': roomUsers.fold<Map<String, String?>>(
+        {},
+        (previousValue, element) => {
+          ...previousValue,
+          element.id: element.role?.toShortString(),
+        },
+      ),
     });
 
     return types.Room(
       id: uuid,
+      imageUrl: imageUrl,
       metadata: metadata,
-      type: types.RoomType.direct,
-      users: users,
-    );
-  }
+      name: name,
+      type: types.RoomType.group,
+      users: roomUsers,
+    ); 
+    }
   /// Creates [types.User] in Firebase to store name and avatar used on
   /// rooms list
   Future<void> createUserInFirestore(types.User user) async {
