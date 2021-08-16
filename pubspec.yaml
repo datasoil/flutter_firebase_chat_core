@@ -18,7 +18,6 @@ dependencies:
       url: git://github.com/Panz99/flutter_chat_types
       ref: main
   meta: ^1.3.0  
-  firebase_storage: ^10.0.1
 
 dev_dependencies:
   flutter_test:

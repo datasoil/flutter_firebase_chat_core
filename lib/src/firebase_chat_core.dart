@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'util.dart';
 
-
 /// Provides access to Firebase chat data. Singleton, use
 /// FirebaseChatCore.instance to aceess methods.
 class FirebaseChatCore {
@@ -119,7 +118,55 @@ class FirebaseChatCore {
       users: users,
     );
   }
+  // TODO: creare funzione a cui passiamo solamente L'id univoco
+  Future<types.Room> createRoomWithCustomId(
+    types.User otherUser, {
+    Map<String, dynamic>? metadata,
+    required String uuid,
+  }) async {
+    if (firebaseUser == null) return Future.error('User does not exist');
 
+    final query = await FirebaseFirestore.instance
+        .collection('rooms')
+        .where('userIds', arrayContains: firebaseUser!.uid)
+        .get();
+
+    final rooms = await processRoomsQuery(firebaseUser!, query);
+
+    try {
+      return rooms.firstWhere((room) {
+        if (room.type == types.RoomType.group) return false;
+
+        final userIds = room.users.map((u) => u.id);
+        return userIds.contains(firebaseUser!.uid) &&
+            userIds.contains(otherUser.id);
+      });
+    } catch (e) {
+      // Do nothing if room does not exist
+      // Create a new room instead
+    }
+
+    final currentUser = await fetchUser(firebaseUser!.uid);
+    final users = [currentUser, otherUser];
+
+    final room = await FirebaseFirestore.instance.collection('rooms').doc(uuid).set({
+      'createdAt': FieldValue.serverTimestamp(),
+      'imageUrl': null,
+      'metadata': metadata,
+      'name': null,
+      'type': types.RoomType.direct.toShortString(),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'userIds': users.map((u) => u.id).toList(),
+      'userRoles': null,
+    });
+
+    return types.Room(
+      id: uuid,
+      metadata: metadata,
+      type: types.RoomType.direct,
+      users: users,
+    );
+  }
   /// Creates [types.User] in Firebase to store name and avatar used on
   /// rooms list
   Future<void> createUserInFirestore(types.User user) async {
