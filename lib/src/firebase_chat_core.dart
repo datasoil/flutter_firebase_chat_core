@@ -374,6 +374,9 @@ class FirebaseChatCore {
         roomId: roomId
       );
     }
+    else if (partialMessage is types.StartMessage) {
+      message = partialMessage;
+    }
 
     if (message != null) {
       final messageMap = message.toJson();
