@@ -16,6 +16,7 @@ Future<List<types.Room>> processRoomsQuery(
   User firebaseUser,
   QuerySnapshot<Map<String, dynamic>> query,
 ) async {
+  print("token: " + firebaseUser.getIdToken().toString());
   final futures = query.docs.map(
     (doc) => processRoomDocument(doc, firebaseUser),
   );
