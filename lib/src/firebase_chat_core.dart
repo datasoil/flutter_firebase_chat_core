@@ -259,12 +259,14 @@ class FirebaseChatCore {
         author: types.User(id: firebaseUser!.uid),
         id: '',
         partialImage: partialMessage,
+        roomId: roomId
       );
     } else if (partialMessage is types.PartialVideo) {
       message = types.VideoMessage.fromPartial(
         author: types.User(id: firebaseUser!.uid),
         id: '',
         partialVideo: partialMessage,
+        roomId: roomId
       );
     }
     if (message != null) {
@@ -375,9 +377,12 @@ class FirebaseChatCore {
       );
     }
     else if (partialMessage is types.StartMessage) {
-      message = partialMessage;
+      message = types.StartMessage.fromPartial(
+        author: types.User(id: firebaseUser!.uid),
+        id: '',
+        roomId: roomId
+      );
     }
-
     if (message != null) {
       final messageMap = message.toJson();
       messageMap.removeWhere((key, value) => key == 'author' || key == 'id');

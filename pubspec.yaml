@@ -13,10 +13,12 @@ dependencies:
     sdk: flutter
   cloud_firestore: ^2.4.0
   firebase_auth: ^3.0.1
-  flutter_chat_types: 
-    git:
-      url: git://github.com/datasoil/flutter_chat_types
-      ref: main
+  flutter_chat_types:
+    path: ../../flutter_chat_types/flutter_chat_types
+ 
+   # git:
+    #  url: git://github.com/datasoil/flutter_chat_types
+     # ref: main
   meta: ^1.3.0  
   firebase_storage: ^10.0.1
 
@@ -26,5 +28,5 @@ dev_dependencies:
   pedantic: ^1.11.1
 
 #dependency_overrides:
-#  flutter_chat_types:
-#    path: ../flutter_chat_types
+ # flutter_chat_types:
+  #  path: ../../flutter_chat_types/flutter_chat_types
