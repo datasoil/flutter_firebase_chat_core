@@ -273,8 +273,8 @@ class FirebaseChatCore {
       final messageMap = message.toJson();
       messageMap.removeWhere((key, value) => key == 'author' || key == 'id');
       messageMap['authorId'] = firebaseUser!.uid;
-      messageMap['createdAt'] = FieldValue.serverTimestamp();
-      messageMap['updatedAt'] = FieldValue.serverTimestamp();
+      messageMap['createdAt'] = (new DateTime.now()).millisecondsSinceEpoch;
+      messageMap['updatedAt'] = (new DateTime.now()).millisecondsSinceEpoch;
 
       dynamic messageRef;
       try {
@@ -307,7 +307,7 @@ class FirebaseChatCore {
         //aggiorno il messaggio
         messageMap
             .removeWhere((key, value) => key == 'id' || key == 'createdAt');
-        messageMap['updatedAt'] = FieldValue.serverTimestamp();
+        messageMap['updatedAt'] = (new DateTime.now()).millisecondsSinceEpoch;
         messageMap['uri'] = url; //link immagine
 
         await FirebaseFirestore.instance
@@ -387,8 +387,8 @@ class FirebaseChatCore {
       final messageMap = message.toJson();
       messageMap.removeWhere((key, value) => key == 'author' || key == 'id');
       messageMap['authorId'] = firebaseUser!.uid;
-      messageMap['createdAt'] = FieldValue.serverTimestamp();
-      messageMap['updatedAt'] = FieldValue.serverTimestamp();
+      messageMap['createdAt'] = (new DateTime.now()).millisecondsSinceEpoch;
+      messageMap['updatedAt'] = (new DateTime.now()).millisecondsSinceEpoch;
       messageMap['roomId'] = roomId;
       log(roomId);
       await FirebaseFirestore.instance
@@ -406,7 +406,7 @@ class FirebaseChatCore {
     final messageMap = message.toJson();
     messageMap.removeWhere(
         (key, value) => key == 'id' || key == 'createdAt' || key == 'author');
-    messageMap['updatedAt'] = FieldValue.serverTimestamp();
+    messageMap['updatedAt'] = (new DateTime.now()).millisecondsSinceEpoch;
     print(messageMap);
 
     await FirebaseFirestore.instance
