@@ -43,12 +43,12 @@ class FirebaseChatCore {
     final roomUsers = [currentUser] + users;
 
     final room = await FirebaseFirestore.instance.collection('rooms').add({
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': DateTime.now().toIso8601String(),
       'imageUrl': imageUrl,
       'metadata': metadata,
       'name': name,
       'type': types.RoomType.group.toShortString(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now().toIso8601String(),
       'userIds': roomUsers.map((u) => u.id).toList(),
       'userRoles': roomUsers.fold<Map<String, String?>>(
         {},
@@ -101,12 +101,12 @@ class FirebaseChatCore {
     final users = [currentUser, otherUser];
 
     final room = await FirebaseFirestore.instance.collection('rooms').add({
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': DateTime.now().toIso8601String(),
       'imageUrl': null,
       'metadata': metadata,
       'name': null,
       'type': types.RoomType.direct.toShortString(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now().toIso8601String(),
       'userIds': users.map((u) => u.id).toList(),
       'userRoles': null,
     });
@@ -132,12 +132,12 @@ class FirebaseChatCore {
     final roomUsers = [currentUser] + users;
 
     final room = await FirebaseFirestore.instance.collection('rooms').doc(uuid).set({
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': DateTime.now(),
       'imageUrl': imageUrl,
       'metadata': metadata,
       'name': name,
       'type': types.RoomType.group.toShortString(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now(),
       'userIds': roomUsers.map((u) => u.id).toList(),
       'userRoles': roomUsers.fold<Map<String, String?>>(
         {},
@@ -161,20 +161,25 @@ class FirebaseChatCore {
   /// rooms list
   Future<void> createUserInFirestore(types.User user) async {
     await FirebaseFirestore.instance.collection('users').doc(user.id).set({
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': DateTime.now().toIso8601String(),
       'firstName': user.firstName,
       'imageUrl': user.imageUrl,
       'lastName': user.lastName,
       'lastSeen': user.lastSeen,
       'metadata': user.metadata,
       'role': user.role?.toShortString(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': DateTime.now().toIso8601String(),
     });
   }
 
   /// Removes [types.User] from `users` collection in Firebase
   Future<void> deleteUserFromFirestore(String userId) async {
     await FirebaseFirestore.instance.collection('users').doc(userId).delete();
+  }
+
+    List<types.Message> orderList(List<types.Message> l) {
+    l.sort((a,b) => a.createdAt!.compareTo(b.createdAt!));
+    return l;
   }
 
   /// Returns a stream of messages from Firebase for a given room
@@ -196,15 +201,18 @@ class FirebaseChatCore {
 
             data['author'] = author.toJson();
             data['id'] = element.id;
-            try {
-              data['createdAt'] = element['createdAt']?.millisecondsSinceEpoch;
-              data['updatedAt'] = element['updatedAt']?.millisecondsSinceEpoch;
+            /*try {
+              data['createdAt'] = DateTime.now().toIso8601String();
+              data['updatedAt'] = DateTime.now().toIso8601String();
             } catch (e) {
               // Ignore errors, null values are ok
-            }
+            }*/
             data.removeWhere((key, value) => key == 'authorId');
-            return [...previousValue, types.Message.fromJson(data)];
-          },
+            previousValue.add(types.Message.fromJson(data));
+            List<types.Message> n = orderList(previousValue);
+            n = new List.from(n.reversed);
+            return n;
+            },
         );
       },
     );
@@ -273,8 +281,8 @@ class FirebaseChatCore {
       final messageMap = message.toJson();
       messageMap.removeWhere((key, value) => key == 'author' || key == 'id');
       messageMap['authorId'] = firebaseUser!.uid;
-      messageMap['createdAt'] = (new DateTime.now()).millisecondsSinceEpoch;
-      messageMap['updatedAt'] = (new DateTime.now()).millisecondsSinceEpoch;
+      messageMap['createdAt'] = DateTime.now().millisecondsSinceEpoch;
+      messageMap['updatedAt'] = DateTime.now().millisecondsSinceEpoch;
 
       dynamic messageRef;
       try {
@@ -307,7 +315,7 @@ class FirebaseChatCore {
         //aggiorno il messaggio
         messageMap
             .removeWhere((key, value) => key == 'id' || key == 'createdAt');
-        messageMap['updatedAt'] = (new DateTime.now()).millisecondsSinceEpoch;
+        messageMap['updatedAt'] = DateTime.now().millisecondsSinceEpoch;
         messageMap['uri'] = url; //link immagine
 
         await FirebaseFirestore.instance
@@ -387,8 +395,8 @@ class FirebaseChatCore {
       final messageMap = message.toJson();
       messageMap.removeWhere((key, value) => key == 'author' || key == 'id');
       messageMap['authorId'] = firebaseUser!.uid;
-      messageMap['createdAt'] = (new DateTime.now()).millisecondsSinceEpoch;
-      messageMap['updatedAt'] = (new DateTime.now()).millisecondsSinceEpoch;
+      messageMap['createdAt'] = DateTime.now().millisecondsSinceEpoch;
+      messageMap['updatedAt'] = DateTime.now().millisecondsSinceEpoch;
       messageMap['roomId'] = roomId;
       log(roomId);
       await FirebaseFirestore.instance
@@ -406,7 +414,7 @@ class FirebaseChatCore {
     final messageMap = message.toJson();
     messageMap.removeWhere(
         (key, value) => key == 'id' || key == 'createdAt' || key == 'author');
-    messageMap['updatedAt'] = (new DateTime.now()).millisecondsSinceEpoch;
+    messageMap['updatedAt'] = DateTime.now().millisecondsSinceEpoch;
     print(messageMap);
 
     await FirebaseFirestore.instance
