@@ -132,6 +132,8 @@ class FirebaseChatCore {
     final roomUsers = [currentUser] + users;
 
     final room = await FirebaseFirestore.instance.collection('rooms').doc(uuid).set({
+      'clientId': currentUser.id
+      ,
       'createdAt': DateTime.now(),
       'imageUrl': imageUrl,
       'metadata': metadata,
@@ -260,7 +262,7 @@ class FirebaseChatCore {
       dynamic partialMessage, String roomId, File file, String fileName,
       {Uint8List? thumbFile, String? thumbFileName}) async {
     if (firebaseUser == null) return;
-
+    debugPrint(firebaseUser!.getIdToken().toString());
     types.Message? message;
     if (partialMessage is types.PartialImage) {
       message = types.ImageMessage.fromPartial(
@@ -312,17 +314,19 @@ class FirebaseChatCore {
             firebaseUser!.uid.toString() + '/' + roomId + '/' + fileName;
         await FirebaseStorage.instance.ref(path).putFile(file);
         final url = await FirebaseStorage.instance.ref(path).getDownloadURL();
+        
         //aggiorno il messaggio
         messageMap
             .removeWhere((key, value) => key == 'id' || key == 'createdAt');
         messageMap['updatedAt'] = DateTime.now().millisecondsSinceEpoch;
-        messageMap['uri'] = url; //link immagine
+        messageMap['uri'] = url is Future<void> ? null: url; //link immagine oppure null
 
         await FirebaseFirestore.instance
             .collection('rooms/$roomId/messages')
             .doc(messageRef.id as String?)
             .update(messageMap);
       } catch (e) {
+        debugPrint("Errore, messageRef è null");
         if (messageRef != null) {
           await FirebaseFirestore.instance
               .collection('rooms/$roomId/messages')
