@@ -182,6 +182,13 @@ class FirebaseChatCore {
     return l;
   }
 
+  Stream<Map<String,dynamic>> lastMessage(types.Room room) {
+    return FirebaseFirestore.instance.collection('rooms/${room.id}/messages').orderBy('createdAt', descending: true).limit(1).snapshots().map(
+      (event) {
+        return event.docs.first.data();
+      });
+  }
+
   /// Returns a stream of messages from Firebase for a given room
   Stream<List<types.Message>> messages(types.Room room) {
     return FirebaseFirestore.instance
