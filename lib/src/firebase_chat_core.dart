@@ -119,21 +119,19 @@ class FirebaseChatCore {
     );
   }
 
-   Future<types.Room> createRoomWithCustomId({
-    String? imageUrl,
-    Map<String, dynamic>? metadata,
-    required String name,
-    required List<types.User> users,
-    required String uuid
-  }) async {
+  Future<types.Room> createRoomWithCustomId(
+      {String? imageUrl,
+      Map<String, dynamic>? metadata,
+      required String name,
+      required List<types.User> users,
+      required String uuid}) async {
     if (firebaseUser == null) return Future.error('User does not exist');
 
     final currentUser = await fetchUser(firebaseUser!.uid);
     final roomUsers = [currentUser] + users;
 
-    final room = await FirebaseFirestore.instance.collection('rooms').doc(uuid).set({
-      'clientId': currentUser.id
-      ,
+    final room =
+        await FirebaseFirestore.instance.collection('rooms').doc(uuid).set({
       'createdAt': DateTime.now(),
       'imageUrl': imageUrl,
       'metadata': metadata,
@@ -157,8 +155,9 @@ class FirebaseChatCore {
       name: name,
       type: types.RoomType.group,
       users: roomUsers,
-    ); 
-    }
+    );
+  }
+
   /// Creates [types.User] in Firebase to store name and avatar used on
   /// rooms list
   Future<void> createUserInFirestore(types.User user) async {
@@ -179,16 +178,19 @@ class FirebaseChatCore {
     await FirebaseFirestore.instance.collection('users').doc(userId).delete();
   }
 
-    List<types.Message> orderList(List<types.Message> l) {
-    l.sort((a,b) => a.createdAt!.compareTo(b.createdAt!));
+  List<types.Message> orderList(List<types.Message> l) {
+    l.sort((a, b) => a.createdAt!.compareTo(b.createdAt!));
     return l;
   }
 
-  Stream<Map<String,dynamic>> lastMessage(types.Room room) {
-    return FirebaseFirestore.instance.collection('rooms/${room.id}/messages').orderBy('createdAt', descending: true).limit(1).snapshots().map(
-      (event) {
-        return event.docs.first.data();
-      });
+  Stream<Map<String, dynamic>> lastMessage(types.Room room) {
+    return FirebaseFirestore.instance
+        .collection('rooms/${room.id}/messages')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((event) {
+      return event.docs.first.data();
+    });
   }
 
   /// Returns a stream of messages from Firebase for a given room
@@ -221,7 +223,7 @@ class FirebaseChatCore {
             List<types.Message> n = orderList(previousValue);
             n = new List.from(n.reversed);
             return n;
-            },
+          },
         );
       },
     );
@@ -265,26 +267,29 @@ class FirebaseChatCore {
         .asyncMap((query) => processRoomsQuery(firebaseUser!, query));
   }
 
+  void changeRoomStatus(String roomId, String status) async {
+    debugPrint('entrato in changeROomStatus');
+    return await FirebaseFirestore.instance.collection('rooms').doc(roomId).update({'metadata':{'status': '$status'}});
+  }
+
   Future<void> sendMediaMessage(
       dynamic partialMessage, String roomId, File file, String fileName,
       {Uint8List? thumbFile, String? thumbFileName}) async {
     if (firebaseUser == null) return;
-    debugPrint(firebaseUser!.getIdToken().toString());
+
     types.Message? message;
     if (partialMessage is types.PartialImage) {
       message = types.ImageMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        partialImage: partialMessage,
-        roomId: roomId
-      );
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          partialImage: partialMessage,
+          roomId: roomId);
     } else if (partialMessage is types.PartialVideo) {
       message = types.VideoMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        partialVideo: partialMessage,
-        roomId: roomId
-      );
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          partialVideo: partialMessage,
+          roomId: roomId);
     }
     if (message != null) {
       final messageMap = message.toJson();
@@ -321,19 +326,17 @@ class FirebaseChatCore {
             firebaseUser!.uid.toString() + '/' + roomId + '/' + fileName;
         await FirebaseStorage.instance.ref(path).putFile(file);
         final url = await FirebaseStorage.instance.ref(path).getDownloadURL();
-        
         //aggiorno il messaggio
         messageMap
             .removeWhere((key, value) => key == 'id' || key == 'createdAt');
         messageMap['updatedAt'] = DateTime.now().millisecondsSinceEpoch;
-        messageMap['uri'] = url is Future<void> ? null: url; //link immagine oppure null
+        messageMap['uri'] = url; //link immagine
 
         await FirebaseFirestore.instance
             .collection('rooms/$roomId/messages')
             .doc(messageRef.id as String?)
             .update(messageMap);
       } catch (e) {
-        debugPrint("Errore, messageRef è null");
         if (messageRef != null) {
           await FirebaseFirestore.instance
               .collection('rooms/$roomId/messages')
@@ -350,57 +353,57 @@ class FirebaseChatCore {
   /// does nothing.
   void sendMessage(dynamic partialMessage, String roomId) async {
     if (firebaseUser == null) return;
-    
+
     types.Message? message;
     if (partialMessage is types.PartialFile) {
       message = types.FileMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        partialFile: partialMessage,
-        roomId: roomId
-      );
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          partialFile: partialMessage,
+          roomId: roomId);
     } else if (partialMessage is types.PartialImage) {
       message = types.ImageMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        partialImage: partialMessage,
-        roomId: roomId
-      );
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          partialImage: partialMessage,
+          roomId: roomId);
     } else if (partialMessage is types.PartialText) {
       message = types.TextMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        partialText: partialMessage,
-        roomId: roomId
-      );
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          partialText: partialMessage,
+          roomId: roomId);
     } else if (partialMessage is types.PartialVideo) {
       message = types.VideoMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        partialVideo: partialMessage,
-        roomId: roomId
-      );
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          partialVideo: partialMessage,
+          roomId: roomId);
     } else if (partialMessage is types.PartialChoice) {
       message = types.ChoiceMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        partialChoice: partialMessage,
-        roomId: roomId
-      );
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          partialChoice: partialMessage,
+          roomId: roomId);
     } else if (partialMessage is types.PartialQuestion) {
       message = types.QuestionMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        partialQuestion: partialMessage,
-        roomId: roomId
-      );
-    }
-    else if (partialMessage is types.StartMessage) {
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          partialQuestion: partialMessage,
+          roomId: roomId);
+    } else if (partialMessage is types.StartMessage) {
       message = types.StartMessage.fromPartial(
-        author: types.User(id: firebaseUser!.uid),
-        id: '',
-        roomId: roomId
-      );
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          roomId: roomId,
+          text: "Start Bot!");
+    }
+    else if(partialMessage is types.FinishMessage) {
+            message = types.FinishMessage.fromPartial(
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          roomId: roomId,
+          text: "Finish!");
     }
     if (message != null) {
       final messageMap = message.toJson();
