@@ -407,12 +407,12 @@ class FirebaseChatCore {
           id: '',
           roomId: roomId,
           text: "Start Bot!");
-    } else if (partialMessage is types.FinishMessage) {
-      message = types.FinishMessage.fromPartial(
+    } else if (partialMessage is types.CancelMessage) {
+      message = types.CancelMessage.fromPartial(
           author: types.User(id: firebaseUser!.uid),
           id: '',
           roomId: roomId,
-          text: "Finish!");
+          text: "Cancel");
     }
     if (message != null) {
       final messageMap = message.toJson();
