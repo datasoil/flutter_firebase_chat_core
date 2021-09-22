@@ -269,12 +269,17 @@ class FirebaseChatCore {
 
   void changeRoomStatus(String roomId, String status) async {
     debugPrint('entrato in changeROomStatus');
-    return await FirebaseFirestore.instance.collection('rooms').doc(roomId).update({'metadata':{'status': '$status'}});
+    return await FirebaseFirestore.instance
+        .collection('rooms')
+        .doc(roomId)
+        .update({
+      'metadata': {'status': '$status'}
+    });
   }
 
   Future<void> sendMediaMessage(
       dynamic partialMessage, String roomId, File file, String fileName,
-      {Uint8List? thumbFile, String? thumbFileName}) async {
+      {Uint8List? thumbFile, String? thumbFileName, String? customPath}) async {
     if (firebaseUser == null) return;
 
     types.Message? message;
@@ -308,11 +313,14 @@ class FirebaseChatCore {
         if (message is types.VideoMessage) {
           if (thumbFile != null && thumbFileName != null) {
             //carico il file
-            final path = firebaseUser!.uid.toString() +
-                '/' +
-                roomId +
-                '/' +
-                thumbFileName;
+            final messageId = messageRef.id as String?;
+            final path = customPath != null
+                ? customPath + '/' + (messageId ?? '') + '_' + thumbFileName
+                : firebaseUser!.uid.toString() +
+                    '/' +
+                    roomId +
+                    '/' +
+                    thumbFileName;
             await FirebaseStorage.instance.ref(path).putData(thumbFile);
             final url =
                 await FirebaseStorage.instance.ref(path).getDownloadURL();
@@ -322,8 +330,10 @@ class FirebaseChatCore {
           }
         }
         //carico il file
-        final path =
-            firebaseUser!.uid.toString() + '/' + roomId + '/' + fileName;
+        final messageId = messageRef.id as String?;
+        final path = customPath != null
+            ? customPath + '/' + (messageId ?? '') + '_' + fileName
+            : firebaseUser!.uid.toString() + '/' + roomId + '/' + fileName;
         await FirebaseStorage.instance.ref(path).putFile(file);
         final url = await FirebaseStorage.instance.ref(path).getDownloadURL();
         //aggiorno il messaggio
@@ -397,9 +407,8 @@ class FirebaseChatCore {
           id: '',
           roomId: roomId,
           text: "Start Bot!");
-    }
-    else if(partialMessage is types.FinishMessage) {
-            message = types.FinishMessage.fromPartial(
+    } else if (partialMessage is types.FinishMessage) {
+      message = types.FinishMessage.fromPartial(
           author: types.User(id: firebaseUser!.uid),
           id: '',
           roomId: roomId,
