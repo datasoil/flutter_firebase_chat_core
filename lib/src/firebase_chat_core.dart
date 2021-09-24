@@ -315,7 +315,7 @@ class FirebaseChatCore {
             //carico il file
             final messageId = messageRef.id as String?;
             final path = customPath != null
-                ? customPath + '/' + (messageId ?? '') + '_' + thumbFileName
+                ? customPath + '/' + (messageId ?? '') + '_th_' + thumbFileName
                 : firebaseUser!.uid.toString() +
                     '/' +
                     roomId +
