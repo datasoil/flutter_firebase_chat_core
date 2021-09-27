@@ -321,10 +321,15 @@ class FirebaseChatCore {
                     roomId +
                     '/' +
                     thumbFileName;
-            await FirebaseStorage.instance.ref(path).putData(thumbFile);
-            final url =
-                await FirebaseStorage.instance.ref(path).getDownloadURL();
-            messageMap['thumbUri'] = url;
+            try {
+              await FirebaseStorage.instance.ref(path).putData(thumbFile);
+              final url =
+                  await FirebaseStorage.instance.ref(path).getDownloadURL();
+              messageMap['thumbUri'] = url;
+            } catch (err) {
+              debugPrint(err.toString());
+              throw 'Error uploading';
+            }
           } else {
             throw 'Missing thumb data';
           }
