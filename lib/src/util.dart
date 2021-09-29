@@ -10,6 +10,16 @@ Future<types.User> fetchUser(String userId, {types.Role? role}) async {
   return processUserDocument(doc, role: role);
 }
 
+/// Fetches coach from Firebase and returns a promise
+Future<types.User> fetchCoach(String userId, {types.Role? role}) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('coachInfo')
+      .doc(userId)
+      .get();
+
+  return processUserDocument(doc, role: role);
+}
+
 /// Returns a list of [types.Room] created from Firebase query.
 /// If room has 2 participants, sets correct room name and image.
 Future<List<types.Room>> processRoomsQuery(
@@ -37,13 +47,21 @@ Future<types.Room> processRoomDocument(
   final updatedAt = doc.data()?['updatedAt'] as Timestamp?;
   final userIds = doc.data()!['userIds'] as List<dynamic>;
   final userRoles = doc.data()?['userRoles'] as Map<String, dynamic>?;
+  final clientId = doc.data()!['clientId'] as String;
 
   final users = await Future.wait(
     userIds.map(
-      (userId) => fetchUser(
-        userId as String,
-        role: types.getRoleFromString(userRoles?[userId] as String?),
-      ),
+      (userId) {
+        final uid = userId as String;
+        if (uid == clientId) {
+          return fetchUser(
+            uid,
+            role: types.getRoleFromString(userRoles?[userId] as String?),
+          );
+        } else {
+          return fetchCoach(uid);
+        }
+      },
     ),
   );
 
