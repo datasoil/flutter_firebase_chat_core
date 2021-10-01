@@ -139,6 +139,7 @@ class FirebaseChatCore {
       'type': types.RoomType.group.toShortString(),
       'updatedAt': DateTime.now(),
       'userIds': roomUsers.map((u) => u.id).toList(),
+      'clientId': currentUser.id,
       'userRoles': roomUsers.fold<Map<String, String?>>(
         {},
         (previousValue, element) => {
