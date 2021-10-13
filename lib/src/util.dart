@@ -66,6 +66,10 @@ Future<types.Room> processRoomDocument(
     ),
   );
 
+  users.add(const types.User(id: 'bot', firstName: 'Coach Bot'));
+
+  print(users.toString());
+
   if (type == types.RoomType.direct.toShortString()) {
     try {
       final otherUser = users.firstWhere(

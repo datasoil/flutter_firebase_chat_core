@@ -129,7 +129,7 @@ class FirebaseChatCore {
 
     final currentUser = await fetchUser(firebaseUser!.uid);
     final roomUsers = [currentUser] + users;
-
+    const bot = types.User(id: 'bot', firstName: 'Coach Bot');
     final room =
         await FirebaseFirestore.instance.collection('rooms').doc(uuid).set({
       'createdAt': DateTime.now(),
@@ -148,14 +148,13 @@ class FirebaseChatCore {
         },
       ),
     });
-
     return types.Room(
       id: uuid,
       imageUrl: imageUrl,
       metadata: metadata,
       name: name,
       type: types.RoomType.group,
-      users: roomUsers,
+      users: roomUsers + [bot],
     );
   }
 
@@ -187,6 +186,8 @@ class FirebaseChatCore {
   Stream<Map<String, dynamic>> lastMessage(types.Room room) {
     return FirebaseFirestore.instance
         .collection('rooms/${room.id}/messages')
+        .where('visibility',
+            arrayContains: FirebaseAuth.instance.currentUser!.uid)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((event) {
@@ -201,6 +202,8 @@ class FirebaseChatCore {
   Stream<List<types.Message>> messages(types.Room room) {
     return FirebaseFirestore.instance
         .collection('rooms/${room.id}/messages')
+        .where('visibility',
+            arrayContains: FirebaseAuth.instance.currentUser!.uid)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
@@ -428,6 +431,12 @@ class FirebaseChatCore {
           id: '',
           roomId: roomId,
           text: "Cancel");
+    } else if (partialMessage is types.FulFilmentCoach) {
+      message = types.FulFilmentCoach.fromPartial(
+          author: types.User(id: firebaseUser!.uid),
+          id: '',
+          roomId: roomId,
+          text: 'Conversazione terminata!');
     }
     if (message != null) {
       final messageMap = message.toJson();
