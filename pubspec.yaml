@@ -16,7 +16,7 @@ dependencies:
   flutter_chat_types:
     git:
       url: git://github.com/datasoil/flutter_chat_types
-      ref: b5079977ca0303ccf87323d72b7ed0eb9363a7bf
+      ref: 4fb986a4c59ec9de4ff87fc3cdbdda8e83bcf7f7
   meta: ^1.3.0  
   firebase_storage: ^10.0.1
 
