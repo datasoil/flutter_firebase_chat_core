@@ -281,12 +281,11 @@ class FirebaseChatCore {
   }
 
   void changeRoomStatus(String roomId, String status) async {
-    debugPrint('entrato in changeROomStatus');
     return await FirebaseFirestore.instance
         .collection('rooms')
         .doc(roomId)
         .update({
-      'metadata': {'status': '$status'}
+      'metadata': {'status': status}
     });
   }
 
@@ -315,6 +314,7 @@ class FirebaseChatCore {
       messageMap['authorId'] = firebaseUser!.uid;
       messageMap['createdAt'] = FieldValue.serverTimestamp();
       messageMap['updatedAt'] = FieldValue.serverTimestamp();
+      messageMap['status'] = 'noread';
 
       dynamic messageRef;
       try {
@@ -424,13 +424,13 @@ class FirebaseChatCore {
           author: types.User(id: firebaseUser!.uid),
           id: '',
           roomId: roomId,
-          text: "Start Bot!");
+          text: 'Start Bot!');
     } else if (partialMessage is types.CancelMessage) {
       message = types.CancelMessage.fromPartial(
           author: types.User(id: firebaseUser!.uid),
           id: '',
           roomId: roomId,
-          text: "Cancel");
+          text: 'Cancel');
     } else if (partialMessage is types.FulFilmentCoach) {
       message = types.FulFilmentCoach.fromPartial(
           author: types.User(id: firebaseUser!.uid),
@@ -445,7 +445,7 @@ class FirebaseChatCore {
       messageMap['createdAt'] = FieldValue.serverTimestamp();
       messageMap['updatedAt'] = FieldValue.serverTimestamp();
       messageMap['roomId'] = roomId;
-      log(roomId);
+      messageMap['status'] = 'noread';
       await FirebaseFirestore.instance
           .collection('rooms/$roomId/messages')
           .add(messageMap);
@@ -462,7 +462,6 @@ class FirebaseChatCore {
     messageMap.removeWhere(
         (key, value) => key == 'id' || key == 'createdAt' || key == 'author');
     messageMap['updatedAt'] = FieldValue.serverTimestamp();
-    print(messageMap);
 
     await FirebaseFirestore.instance
         .collection('rooms/$roomId/messages')

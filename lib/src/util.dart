@@ -26,7 +26,6 @@ Future<List<types.Room>> processRoomsQuery(
   User firebaseUser,
   QuerySnapshot<Map<String, dynamic>> query,
 ) async {
-  print("token: " + firebaseUser.getIdToken().toString());
   final futures = query.docs.map(
     (doc) => processRoomDocument(doc, firebaseUser),
   );
@@ -67,8 +66,6 @@ Future<types.Room> processRoomDocument(
   );
 
   users.add(const types.User(id: 'bot', firstName: 'Coach Bot'));
-
-  print(users.toString());
 
   if (type == types.RoomType.direct.toShortString()) {
     try {
