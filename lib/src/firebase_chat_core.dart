@@ -242,6 +242,81 @@ class FirebaseChatCore {
     );
   }
 
+  Stream<bool> hasUnseenMessages(types.Room room) {
+    return FirebaseFirestore.instance
+        .collection('rooms/${room.id}/messages')
+        .orderBy('createdAt', descending: true)
+        .where('visibility',
+            arrayContains: FirebaseAuth.instance.currentUser!.uid)
+        .where('status', isEqualTo: 'delivered')
+        .where('authorId', isNotEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.isEmpty;
+    });
+  }
+
+  /// Returns a stream of unseen messages from Firebase for a given room
+  Stream<List<types.Message>> unseenMessages(types.Room room) {
+    return FirebaseFirestore.instance
+        .collection('rooms/${room.id}/messages')
+        .orderBy('createdAt', descending: true)
+        .where('visibility',
+            arrayContains: FirebaseAuth.instance.currentUser!.uid)
+        .where('status', isEqualTo: 'delivered')
+        .where('authorId', isNotEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .snapshots()
+        .map(
+      (snapshot) {
+        return snapshot.docs.fold<List<types.Message>>(
+          [],
+          (previousValue, element) {
+            final data = element.data();
+            final author = room.users.firstWhere(
+              (u) => u.id == data['authorId'],
+              orElse: () => types.User(id: data['authorId'] as String),
+            );
+
+            data['author'] = author.toJson();
+            data['id'] = element.id;
+            if (data['createdAt'] is Timestamp) {
+              data['createdAt'] = data['createdAt']?.millisecondsSinceEpoch;
+            }
+            if (data['updatedAt'] is Timestamp) {
+              data['updatedAt'] = data['updatedAt']?.millisecondsSinceEpoch;
+            }
+            /*try {
+              data['createdAt'] = DateTime.now().toIso8601String();
+              data['updatedAt'] = DateTime.now().toIso8601String();
+            } catch (e) {
+              // Ignore errors, null values are ok
+            }*/
+            data.removeWhere((key, value) => key == 'authorId');
+            previousValue.add(types.Message.fromJson(data));
+            var n = orderList(previousValue);
+            n = List.from(n.reversed);
+            return n;
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> setMessageSeen(types.Message message, String roomId) async {
+    if (firebaseUser == null) return;
+    //if (message.author.id != firebaseUser!.uid) return;
+
+    final updMessage = {
+      'updatedAt': FieldValue.serverTimestamp(),
+      'status': 'seen',
+    };
+
+    await FirebaseFirestore.instance
+        .collection('rooms/$roomId/messages')
+        .doc(message.id)
+        .update(updMessage);
+  }
+
   /// Returns a stream of changes in a room from Firebase
   Stream<types.Room> room(String roomId) {
     if (firebaseUser == null) return const Stream.empty();
@@ -314,7 +389,7 @@ class FirebaseChatCore {
       messageMap['authorId'] = firebaseUser!.uid;
       messageMap['createdAt'] = FieldValue.serverTimestamp();
       messageMap['updatedAt'] = FieldValue.serverTimestamp();
-      messageMap['status'] = 'noread';
+      messageMap['status'] = 'sent';
 
       dynamic messageRef;
       try {
@@ -445,7 +520,7 @@ class FirebaseChatCore {
       messageMap['createdAt'] = FieldValue.serverTimestamp();
       messageMap['updatedAt'] = FieldValue.serverTimestamp();
       messageMap['roomId'] = roomId;
-      messageMap['status'] = 'noread';
+      messageMap['status'] = 'sent';
       await FirebaseFirestore.instance
           .collection('rooms/$roomId/messages')
           .add(messageMap);
