@@ -245,14 +245,14 @@ class FirebaseChatCore {
   Stream<bool> hasUnseenMessages(types.Room room) {
     return FirebaseFirestore.instance
         .collection('rooms/${room.id}/messages')
-        .orderBy('createdAt', descending: true)
         .where('visibility',
             arrayContains: FirebaseAuth.instance.currentUser!.uid)
         .where('status', isEqualTo: 'delivered')
         .where('authorId', isNotEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        //.orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.isEmpty;
+      return snapshot.docs.isNotEmpty;
     });
   }
 
@@ -260,7 +260,7 @@ class FirebaseChatCore {
   Stream<List<types.Message>> unseenMessages(types.Room room) {
     return FirebaseFirestore.instance
         .collection('rooms/${room.id}/messages')
-        .orderBy('createdAt', descending: true)
+        //.orderBy('createdAt', descending: true)
         .where('visibility',
             arrayContains: FirebaseAuth.instance.currentUser!.uid)
         .where('status', isEqualTo: 'delivered')
